@@ -1,4 +1,4 @@
-import PhotoSwipeLightbox from "photoswipe/lightbox";
+import PhotoSwipeLightbox from 'photoswipe/lightbox';
 
 declare module 'flarum/forum/components/CommentPost' {
   export default interface CommentPost {
