@@ -13,13 +13,16 @@ app.initializers.add('sycho/photoswipe', () => {
   }
 
   components.forEach((prototype) => {
-    prototype.lightbox = new PhotoSwipeLightbox({
-      gallery: '.Post-body > p, .item-excerpt',
-      children: 'a[data-pswp]',
-      pswpModule,
+    extend(prototype, 'oninit', function (this: any) {
+      this.lightbox = new PhotoSwipeLightbox({
+        gallery: '.Post-body > p, .item-excerpt',
+        children: 'a[data-pswp]',
+        pswpModule,
+      });
     });
 
     extend(prototype, ['onupdate', 'oncreate'], function () {
+      console.log('init');
       // @ts-ignore
       this.$('a[data-pswp] > img').each((i, el: HTMLImageElement) => {
         const $el = $(el);
@@ -35,6 +38,7 @@ app.initializers.add('sycho/photoswipe', () => {
     });
 
     extend(prototype, 'onremove', function () {
+      console.log('destroy');
       this.lightbox.destroy();
       this.lightbox = null;
     });
