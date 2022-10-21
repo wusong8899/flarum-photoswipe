@@ -2,7 +2,7 @@
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg) [![Latest Stable Version](https://img.shields.io/packagist/v/sycho/flarum-photoswipe.svg)](https://packagist.org/packages/sycho/flarum-photoswipe) [![Total Downloads](https://img.shields.io/packagist/dt/sycho/flarum-photoswipe.svg)](https://packagist.org/packages/sycho/flarum-photoswipe)
 
-A [Flarum](http://flarum.org) extension. PhotoSwipe integration
+A [Flarum](http://flarum.org) extension. [PhotoSwipe](https://photoswipe.com/) integration.
 
 ## Installation
 
