@@ -5,7 +5,7 @@ import DiscussionListItem from 'flarum/forum/components/DiscussionListItem';
 import PhotoSwipeLightbox from 'photoswipe/lightbox';
 import pswpModule from 'photoswipe';
 
-app.initializers.add('sycho/photoswipe', () => {
+app.initializers.add('sycho/flarum-photoswipe', () => {
   let components: any[] = [CommentPost.prototype];
 
   if ('ianm-synopsis' in flarum.extensions) {

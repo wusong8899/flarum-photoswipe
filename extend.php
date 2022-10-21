@@ -1,7 +1,7 @@
 <?php
 
 /*
- * This file is part of sycho/photoswipe.
+ * This file is part of sycho/flarum-photoswipe.
  *
  * Copyright (c) 2022 Sami Mazouz.
  *
