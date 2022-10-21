@@ -22,7 +22,6 @@ app.initializers.add('sycho/flarum-photoswipe', () => {
     });
 
     extend(prototype, ['onupdate', 'oncreate'], function () {
-      console.log('init');
       // @ts-ignore
       this.$('a[data-pswp] > img').each((i, el: HTMLImageElement) => {
         const $el = $(el);
@@ -38,7 +37,6 @@ app.initializers.add('sycho/flarum-photoswipe', () => {
     });
 
     extend(prototype, 'onremove', function () {
-      console.log('destroy');
       this.lightbox.destroy();
       this.lightbox = null;
     });
