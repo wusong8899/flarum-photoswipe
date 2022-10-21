@@ -25,10 +25,14 @@
         "flarum-extension": {
             "title": "PhotoSwipe",
             "category": "",
+            "optional-dependencies": [
+                "flarum/markdown", "flarum/bbcode",
+                "datitisev/flarum-post-galleries", "fof/upload"
+            ],
             "icon": {
-                "name": "",
-                "color": "",
-                "backgroundColor": ""
+                "name": "far fa-images",
+                "backgroundColor": "#117187",
+                "color": "#fff"
             }
         },
         "flarum-cli": {
