@@ -14,11 +14,23 @@ app.initializers.add('sycho/flarum-photoswipe', () => {
 
   components.forEach((prototype) => {
     extend(prototype, 'oninit', function (this: any) {
+      const dataId = this.attrs.post?.id() || this.attrs.discussion?.id();
+
       this.lightbox = new PhotoSwipeLightbox({
-        gallery: '.Post-body > p, .item-excerpt',
+        gallery: `[data-id="${dataId}"] .Post-body > p, [data-id="${dataId}"] .item-excerpt`,
         children: 'a[data-pswp]',
         pswpModule,
       });
+    });
+
+    extend(prototype, 'oncreate', function (this: any) {
+      if (this.galleries) {
+        this.lightbox.on('change', () => {
+          this.galleries.forEach((swiper: any) => {
+            swiper.slideTo(this.lightbox.pswp.currIndex, 0, false);
+          });
+        });
+      }
     });
 
     extend(prototype, ['onupdate', 'oncreate'], function () {
