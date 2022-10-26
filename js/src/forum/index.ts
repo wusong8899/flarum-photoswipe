@@ -17,7 +17,7 @@ app.initializers.add('sycho/flarum-photoswipe', () => {
       const dataId = this.attrs.post?.id() || this.attrs.discussion?.id();
 
       this.lightbox = new PhotoSwipeLightbox({
-        gallery: `[data-id="${dataId}"] .Post-body, [data-id="${dataId}"] .item-excerpt`,
+        gallery: `[data-id="${dataId}"] .Post-body, [data-id="${dataId}"] .item-excerpt, .FlarumBlog-Article .Post-body`,
         children: 'a[data-pswp]',
         pswpModule,
       });
