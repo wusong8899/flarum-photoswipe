@@ -17,35 +17,44 @@ app.initializers.add('sycho/flarum-photoswipe', () => {
       const dataId = this.attrs.post?.id() || this.attrs.discussion?.id();
 
       this.lightbox = new PhotoSwipeLightbox({
-        gallery: `[data-id="${dataId}"] .Post-body > p, [data-id="${dataId}"] .item-excerpt`,
+        gallery: `[data-id="${dataId}"] .Post-body, [data-id="${dataId}"] .item-excerpt`,
         children: 'a[data-pswp]',
         pswpModule,
       });
     });
 
-    extend(prototype, 'oncreate', function (this: any) {
-      if (this.galleries) {
-        this.lightbox.on('change', () => {
-          this.galleries.forEach((swiper: any) => {
-            swiper.slideTo(this.lightbox.pswp.currIndex, 0, false);
-          });
-        });
-      }
-    });
-
     extend(prototype, ['onupdate', 'oncreate'], function () {
+      // Timeout to make sure galleries were initialized
       // @ts-ignore
       this.$('a[data-pswp] > img').each((i, el: HTMLImageElement) => {
         const $el = $(el);
         const $a = $el.parent('a');
-
-        el.onload = () => {
+        const setDimensions = () => {
           $a.attr('data-pswp-width', el.naturalWidth);
           $a.attr('data-pswp-height', el.naturalHeight);
-
-          this.lightbox?.init();
         };
+
+        if (el.complete && el.naturalWidth) {
+          setDimensions();
+          this.lightbox.init();
+        } else {
+          el.onload = () => {
+            setDimensions();
+            this.lightbox.init();
+          };
+        }
       });
+
+      setTimeout(() => {
+        if (this.galleries) {
+          this.lightbox.on('change', () => {
+            // Match the swiper current slide with the photoswipe current slide.
+            this.galleries.forEach((swiper: any) => {
+              swiper.slideTo(this.lightbox.pswp.currIndex, 0, false);
+            });
+          });
+        }
+      }, 100);
     });
 
     extend(prototype, 'onremove', function () {
