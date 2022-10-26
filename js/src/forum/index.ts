@@ -26,7 +26,7 @@ app.initializers.add('sycho/flarum-photoswipe', () => {
     extend(prototype, ['onupdate', 'oncreate'], function () {
       // Timeout to make sure galleries were initialized
       // @ts-ignore
-      this.$('a[data-pswp] > img').each((i, el: HTMLImageElement) => {
+      this.$('a[data-pswp] > img').each((index, el: HTMLImageElement) => {
         const $el = $(el);
         const $a = $el.parent('a');
         const setDimensions = () => {
@@ -41,6 +41,8 @@ app.initializers.add('sycho/flarum-photoswipe', () => {
           el.onload = () => {
             setDimensions();
             this.lightbox.init();
+
+            if (this.lightbox.pswp) this.lightbox.pswp.refreshSlideContent(index);
           };
         }
       });
