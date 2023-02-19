@@ -15,9 +15,13 @@ app.initializers.add('sycho/flarum-photoswipe', () => {
   components.forEach((prototype) => {
     extend(prototype, 'oninit', function (this: any) {
       const dataId = this.attrs.post?.id() || this.attrs.discussion?.id();
+      const selector =
+        'datitisev-post-galleries' in flarum.extensions
+          ? '.swiper'
+          : `[data-id="${dataId}"] .Post-body, [data-id="${dataId}"] .item-excerpt, .FlarumBlog-Article .Post-body`;
 
       this.lightbox = new PhotoSwipeLightbox({
-        gallery: `[data-id="${dataId}"] .Post-body, [data-id="${dataId}"] .item-excerpt, .FlarumBlog-Article .Post-body`,
+        gallery: selector,
         children: 'a[data-pswp]',
         pswpModule,
       });
