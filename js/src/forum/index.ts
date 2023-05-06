@@ -63,7 +63,7 @@ app.initializers.add('sycho/flarum-photoswipe', () => {
           this.lightbox.on('change', () => {
             // Match the swiper current slide with the photoswipe current slide.
             const gallery = this.galleries.find((swiper: any) => this.lightbox.options.dataSource.gallery === swiper.$el[0]);
-            gallery.slideTo(this.lightbox.pswp.currIndex, 0, false);
+            gallery?.slideTo(this.lightbox.pswp.currIndex, 0, false);
 
             this.galleries
               .filter((swiper: any) => this.lightbox.options.dataSource.gallery !== swiper.$el[0])
