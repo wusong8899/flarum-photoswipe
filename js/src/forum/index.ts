@@ -2,6 +2,7 @@ import app from 'flarum/forum/app';
 import { extend } from 'flarum/common/extend';
 import CommentPost from 'flarum/forum/components/CommentPost';
 import DiscussionListItem from 'flarum/forum/components/DiscussionListItem';
+// @ts-ignore
 import PhotoSwipeLightbox from 'photoswipe/lightbox';
 import pswpModule from 'photoswipe';
 
@@ -15,20 +16,25 @@ app.initializers.add('sycho/flarum-photoswipe', () => {
   components.forEach((prototype) => {
     extend(prototype, 'oninit', function (this: any) {
       const dataId = this.attrs.post?.id() || this.attrs.discussion?.id();
-      const selector =
-        'datitisev-post-galleries' in flarum.extensions
-          ? '.swiper'
-          : `[data-id="${dataId}"] .Post-body, [data-id="${dataId}"] .item-excerpt, .FlarumBlog-Article .Post-body`;
+      const selectors = [
+        // A Photoswiper instance for images per post, per excerpt, and per article.
+        `[data-id="${dataId}"] .Post-body:not(:has(.swiper)), [data-id="${dataId}"] .item-excerpt:not(:has(.swiper)), .FlarumBlog-Article .Post-body:not(:has(.swiper))`,
+      ];
+      // A Photoswiper instance for images per gallery (per post, per excerpt, and per article).
+      if ('datitisev-post-galleries' in flarum.extensions) {
+        selectors.push(
+          `[data-id="${dataId}"] .Post-body .swiper, [data-id="${dataId}"] .item-excerpt .swiper, .FlarumBlog-Article .Post-body .swiper`
+        );
+      }
 
       this.lightbox = new PhotoSwipeLightbox({
-        gallery: selector,
+        gallery: selectors.join(', '),
         children: 'a[data-pswp]',
         pswpModule,
       });
     });
 
     extend(prototype, ['onupdate', 'oncreate'], function () {
-      // Timeout to make sure galleries were initialized
       // @ts-ignore
       this.$('a[data-pswp] > img').each((index, el: HTMLImageElement) => {
         const $el = $(el);
@@ -51,13 +57,22 @@ app.initializers.add('sycho/flarum-photoswipe', () => {
         }
       });
 
+      // Timeout to make sure galleries were initialized
       setTimeout(() => {
         if (this.galleries) {
           this.lightbox.on('change', () => {
             // Match the swiper current slide with the photoswipe current slide.
-            this.galleries.forEach((swiper: any) => {
-              swiper.slideTo(this.lightbox.pswp.currIndex, 0, false);
-            });
+            const gallery = this.galleries.find((swiper: any) => this.lightbox.options.dataSource.gallery === swiper.$el[0]);
+            gallery.slideTo(this.lightbox.pswp.currIndex, 0, false);
+
+            this.galleries
+              .filter((swiper: any) => this.lightbox.options.dataSource.gallery !== swiper.$el[0])
+              .map((swiper: any) => {
+                swiper.tmpCurrIndex = swiper.currIndex;
+                swiper.slideTo(this.lightbox.pswp.currIndex, 0, false);
+                return swiper;
+              })
+              .forEach((swiper: any) => swiper.slideTo(swiper.tmpCurrIndex, 0, false));
           });
         }
       }, 100);
