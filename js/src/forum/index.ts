@@ -25,6 +25,12 @@ app.initializers.add('sycho/flarum-photoswipe', () => {
         selectors.push(
           `[data-id="${dataId}"] .Post-body .swiper, [data-id="${dataId}"] .item-excerpt .swiper, .FlarumBlog-Article .Post-body .swiper`
         );
+
+        const singleImagesOutsideGalleries = ':not(:has(.swiper)):not([class^="swiper"]):has(>a[data-pswp])';
+
+        selectors.push(
+          `[data-id="${dataId}"] .Post-body ${singleImagesOutsideGalleries}, [data-id="${dataId}"] .item-excerpt ${singleImagesOutsideGalleries}, .FlarumBlog-Article .Post-body ${singleImagesOutsideGalleries}`
+        );
       }
 
       this.lightbox = new PhotoSwipeLightbox({
