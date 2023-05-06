@@ -11,9 +11,8 @@ class MarkNormalPostImages
     public function __invoke(Configurator $config)
     {
         foreach (self::TAGS as $tagName => $src) {
-            $tag = $config->tags[$tagName];
-
-            if ($tag) {
+            if ($config->tags->offsetExists($tagName)) {
+                $tag = $config->tags->get($tagName);
                 $tag->template = '<a data-pswp="" href="{@'.$src.'}">'.$tag->template.'</a>';
             }
         }
