@@ -13,24 +13,39 @@ app.initializers.add('sycho/flarum-photoswipe', () => {
     components.push(DiscussionListItem.prototype);
   }
 
+  const isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+  const hasGalleryExtension = 'datitisev-post-galleries' in flarum.extensions;
+
   components.forEach((prototype) => {
     extend(prototype, 'oninit', function (this: any) {
       const dataId = this.attrs.post?.id() || this.attrs.discussion?.id();
-      const selectors = [
-        // A Photoswiper instance for images per post, per excerpt, and per article.
-        `[data-id="${dataId}"] .Post-body:not(:has(.swiper)), [data-id="${dataId}"] .item-excerpt:not(:has(.swiper)), .FlarumBlog-Article .Post-body:not(:has(.swiper))`,
-      ];
+      const selectors = [];
+
+      if (!isFirefox) {
+        selectors.push(
+          // A Photoswiper instance for images per post, per excerpt, and per article.
+          `[data-id="${dataId}"] .Post-body:not(:has(.swiper)), [data-id="${dataId}"] .item-excerpt:not(:has(.swiper)), .FlarumBlog-Article .Post-body:not(:has(.swiper))`
+        );
+      } else if (!hasGalleryExtension) {
+        selectors.push(
+          // A Photoswiper instance for images per post, per excerpt, and per article.
+          `[data-id="${dataId}"] .Post-body, [data-id="${dataId}"] .item-excerpt, .FlarumBlog-Article .Post-body`
+        );
+      }
+
       // A Photoswiper instance for images per gallery (per post, per excerpt, and per article).
-      if ('datitisev-post-galleries' in flarum.extensions) {
+      if (hasGalleryExtension) {
         selectors.push(
           `[data-id="${dataId}"] .Post-body .swiper, [data-id="${dataId}"] .item-excerpt .swiper, .FlarumBlog-Article .Post-body .swiper`
         );
 
-        const singleImagesOutsideGalleries = ':not(:has(.swiper)):not([class^="swiper"]):has(>a[data-pswp])';
+        if (!isFirefox) {
+          const singleImagesOutsideGalleries = ':not(:has(.swiper)):not([class^="swiper"]):has(>a[data-pswp])';
 
-        selectors.push(
-          `[data-id="${dataId}"] .Post-body ${singleImagesOutsideGalleries}, [data-id="${dataId}"] .item-excerpt ${singleImagesOutsideGalleries}, .FlarumBlog-Article .Post-body ${singleImagesOutsideGalleries}`
-        );
+          selectors.push(
+            `[data-id="${dataId}"] .Post-body ${singleImagesOutsideGalleries}, [data-id="${dataId}"] .item-excerpt ${singleImagesOutsideGalleries}, .FlarumBlog-Article .Post-body ${singleImagesOutsideGalleries}`
+          );
+        }
       }
 
       this.lightbox = new PhotoSwipeLightbox({
