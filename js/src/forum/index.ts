@@ -13,7 +13,6 @@ app.initializers.add('sycho/flarum-photoswipe', () => {
     components.push(DiscussionListItem.prototype);
   }
 
-  const isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
   const hasGalleryExtension = 'datitisev-post-galleries' in flarum.extensions;
 
   components.forEach((prototype) => {
@@ -21,16 +20,19 @@ app.initializers.add('sycho/flarum-photoswipe', () => {
       const dataId = this.attrs.post?.id() || this.attrs.discussion?.id();
       const selectors = [];
 
-      if (!isFirefox) {
-        selectors.push(
-          // A Photoswiper instance for images per post, per excerpt, and per article.
-          `[data-id="${dataId}"] .Post-body:not(:has(.swiper)), [data-id="${dataId}"] .item-excerpt:not(:has(.swiper)), .FlarumBlog-Article .Post-body:not(:has(.swiper))`
-        );
-      } else if (!hasGalleryExtension) {
-        selectors.push(
-          // A Photoswiper instance for images per post, per excerpt, and per article.
-          `[data-id="${dataId}"] .Post-body, [data-id="${dataId}"] .item-excerpt, .FlarumBlog-Article .Post-body`
-        );
+      // The browser might not support :has yet.
+      try {
+        // A Photoswiper instance for images per post, per excerpt, and per article.
+        const selector = `[data-id="${dataId}"] .Post-body:not(:has(.swiper)), [data-id="${dataId}"] .item-excerpt:not(:has(.swiper)), .FlarumBlog-Article .Post-body:not(:has(.swiper))`;
+        document.querySelectorAll(selector);
+        selectors.push(selector);
+      } catch {
+        if (!hasGalleryExtension) {
+          selectors.push(
+            // A Photoswiper instance for images per post, per excerpt, and per article.
+            `[data-id="${dataId}"] .Post-body, [data-id="${dataId}"] .item-excerpt, .FlarumBlog-Article .Post-body`
+          );
+        }
       }
 
       // A Photoswiper instance for images per gallery (per post, per excerpt, and per article).
