@@ -155,20 +155,22 @@ app.initializers.add('sycho-photoswipe', () => {
     // Extend the view method to include Glide component
     extend(prototype, 'view', function (vdom) {
       if (this.glideComponent) {
-        // Insert the Glide component after the post body
-        const postBody = vdom.find('.Post-body');
-        if (postBody) {
-          const glideVdom = this.renderGlideComponent();
-          if (glideVdom) {
-            // Insert after Post-body
-            const parentContainer = postBody.parent || vdom;
-            const bodyIndex = parentContainer.children.indexOf(postBody);
-            if (bodyIndex !== -1) {
-              parentContainer.children.splice(bodyIndex + 1, 0, glideVdom);
-            }
+        const glideVdom = this.renderGlideComponent();
+        if (glideVdom) {
+          // Add the Glide component to the end of the existing VDOM
+          // This ensures it's rendered after the post content
+          if (Array.isArray(vdom)) {
+            vdom.push(glideVdom);
+          } else if (vdom.children && Array.isArray(vdom.children)) {
+            vdom.children.push(glideVdom);
+          } else {
+            // Fallback: create a wrapper
+            const originalVdom = vdom;
+            return [originalVdom, glideVdom];
           }
         }
       }
+      return vdom;
     });
   });
 
