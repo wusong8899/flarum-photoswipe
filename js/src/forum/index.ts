@@ -68,13 +68,13 @@ app.initializers.add('sycho-photoswipe', () => {
 
       // Initialize Glide component for posts with multiple images
       this.glideComponent = null;
+      
+      // Initialize Glide component properties immediately
+      this.initializeGlideComponent();
     });
 
     extend(prototype, ['onupdate', 'oncreate'], function () {
       console.log('[PhotoSwipe] oncreate/onupdate triggered');
-      
-      // Initialize/update Glide component for posts with multiple images
-      this.initializeGlideComponent();
 
       // @ts-ignore
       const $images = this.$('a[data-pswp] > img');
@@ -136,21 +136,32 @@ app.initializers.add('sycho-photoswipe', () => {
 
     // Add helper methods to prototype
     prototype.initializeGlideComponent = function() {
-      if (!this.attrs?.post) return;
+      if (!this.attrs?.post) {
+        console.log('[Glide] No post attrs found');
+        return;
+      }
       
       const postId = this.attrs.post.id();
-      if (!postId) return;
+      if (!postId) {
+        console.log('[Glide] No post ID found');
+        return;
+      }
 
       // Store reference for use in contentItems
       this.glidePostId = postId.toString();
       this.glideDiscussionId = this.attrs.post?.discussion?.()?.id?.()?.toString();
+      console.log('[Glide] Component initialized for post:', this.glidePostId);
     };
 
     // Extend contentItems to add Glide carousel using Flarum's ItemList pattern
     extend(prototype, 'contentItems', function (items) {
+      console.log('[Glide] contentItems called, attrs:', this.attrs?.post?.id(), 'glidePostId:', this.glidePostId);
+      
       // Only add Glide component for CommentPost (posts with actual content)
       if (this.attrs?.post && this.glidePostId) {
         const postId = this.glidePostId;
+        
+        console.log('[Glide] Adding Glide component for post:', postId);
         
         // Always add the component - it will handle its own visibility logic
         items.add(
@@ -162,6 +173,8 @@ app.initializers.add('sycho-photoswipe', () => {
           }),
           -10 // Lower priority to render after main content
         );
+      } else {
+        console.log('[Glide] Not adding component - post attrs or glidePostId missing');
       }
     });
   });

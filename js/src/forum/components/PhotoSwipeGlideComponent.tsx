@@ -34,6 +34,8 @@ export default class PhotoSwipeGlideComponent extends Component<PhotoSwipeGlideA
 
   oninit(vnode: Mithril.Vnode<PhotoSwipeGlideAttrs>) {
     super.oninit(vnode);
+    
+    console.log('[GlideComponent] oninit called for post:', vnode.attrs.postId);
 
     this.state = {
       isInitialized: false,
@@ -47,18 +49,24 @@ export default class PhotoSwipeGlideComponent extends Component<PhotoSwipeGlideA
   }
 
   view(_vnode: Mithril.Vnode<PhotoSwipeGlideAttrs>): Mithril.Children {
+    console.log('[GlideComponent] view called, images:', this.state.images?.length, 'error:', this.error.hasError);
+    
     if (this.error.hasError) {
       return this.renderError();
     }
 
     if (!this.state.images || this.state.images.length === 0) {
+      console.log('[GlideComponent] No images found, not rendering carousel');
       return null;
     }
 
     // Don't show carousel for single image
     if (this.state.images.length === 1) {
+      console.log('[GlideComponent] Only 1 image, not showing carousel');
       return null;
     }
+    
+    console.log('[GlideComponent] Rendering carousel with', this.state.images.length, 'images');
 
     return (
       <div className="photoswipe-glide-wrapper">
@@ -114,16 +122,40 @@ export default class PhotoSwipeGlideComponent extends Component<PhotoSwipeGlideA
 
   oncreate(vnode: Mithril.VnodeDOM<PhotoSwipeGlideAttrs>) {
     super.oncreate(vnode);
+    
+    console.log('[GlideComponent] oncreate called for post:', vnode.attrs.postId);
 
-    // Find the post element and extract images
-    const postElement = vnode.attrs.postElement ||
-                      document.querySelector(`[data-id="${vnode.attrs.postId}"] .Post-body`);
+    // Find the post element and extract images using multiple strategies
+    let postElement = vnode.attrs.postElement;
+    
+    if (!postElement) {
+      // Try different selectors to find the post element
+      const selectors = [
+        `[data-id="${vnode.attrs.postId}"] .Post-body`,
+        `[data-id="${vnode.attrs.postId}"]`,
+        `.PostStream-item[data-id="${vnode.attrs.postId}"] .Post-body`,
+        `.PostStream-item[data-id="${vnode.attrs.postId}"]`
+      ];
+      
+      for (const selector of selectors) {
+        postElement = document.querySelector(selector) as HTMLElement;
+        if (postElement) {
+          console.log('[GlideComponent] Found post element with selector:', selector);
+          break;
+        }
+      }
+    }
+    
+    console.log('[GlideComponent] Found post element:', !!postElement);
 
     if (postElement) {
       this.state.images = extractImagesFromPost(postElement as HTMLElement);
+      console.log('[GlideComponent] Extracted images:', this.state.images.length);
 
       // Only initialize if we have 2+ images
       if (this.state.images.length >= 2) {
+        console.log('[GlideComponent] Initializing carousel for', this.state.images.length, 'images');
+        
         // Re-render with images data
         m.redraw();
 
@@ -131,7 +163,11 @@ export default class PhotoSwipeGlideComponent extends Component<PhotoSwipeGlideA
         requestAnimationFrame(() => {
           this.initGlide(vnode.attrs);
         });
+      } else {
+        console.log('[GlideComponent] Not enough images for carousel:', this.state.images.length);
       }
+    } else {
+      console.log('[GlideComponent] Post element not found for postId:', vnode.attrs.postId);
     }
   }
 

@@ -63,9 +63,16 @@ export function getPostGalleryConfig(imageCount: number): GlideOptions {
 /**
  * Extract image data from PhotoSwipe anchors
  */
-export function extractImagesFromPost(postElement: HTMLElement): ImageData[] {
+export function extractImagesFromPost(postElement: HTMLElement | null): ImageData[] {
   const images: ImageData[] = [];
+  
+  if (!postElement) {
+    console.log('[GlideConfig] No post element provided');
+    return images;
+  }
+  
   const anchors = postElement.querySelectorAll('a[data-pswp]');
+  console.log('[GlideConfig] Found', anchors.length, 'anchors with data-pswp');
 
   anchors.forEach((anchor, index) => {
     const img = anchor.querySelector('img');
@@ -80,9 +87,11 @@ export function extractImagesFromPost(postElement: HTMLElement): ImageData[] {
         title: img.title || anchor.title || undefined
       };
       images.push(imageData);
+      console.log('[GlideConfig] Extracted image', index + 1, ':', imageData.src);
     }
   });
 
+  console.log('[GlideConfig] Total images extracted:', images.length);
   return images;
 }
 
