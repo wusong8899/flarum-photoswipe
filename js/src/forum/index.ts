@@ -4,8 +4,8 @@ import CommentPost from 'flarum/forum/components/CommentPost';
 import DiscussionListItem from 'flarum/forum/components/DiscussionListItem';
 import PhotoSwipeLightbox from 'photoswipe/lightbox';
 import pswpModule from 'photoswipe';
-import PhotoSwipeGlideComponent from './components/PhotoSwipeGlideComponent';
-import { carouselManager } from './utils/GlideConfig';
+import ImageCarousel from './components/ImageCarousel';
+import { CarouselManager } from './services/CarouselManager';
 import m from 'mithril';
 
 app.initializers.add('sycho-photoswipe', () => {
@@ -165,11 +165,13 @@ app.initializers.add('sycho-photoswipe', () => {
         
         // Always add the component - it will handle its own visibility logic
         items.add(
-          'photoswipe-glide',
-          m(PhotoSwipeGlideComponent, {
+          'image-carousel',
+          m(ImageCarousel, {
             postId: postId,
             discussionId: this.glideDiscussionId,
-            enableAutoplay: false // Default: no autoplay for better UX
+            enableAutoplay: false, // Default: no autoplay for better UX
+            minImageCount: 2,
+            extractionTimeout: 15000
           }),
           -10 // Lower priority to render after main content
         );
@@ -182,6 +184,6 @@ app.initializers.add('sycho-photoswipe', () => {
   // Global cleanup handler for navigation
   extend(app, 'mount', function () {
     // Clean up all carousel instances on navigation
-    carouselManager.cleanupAll();
+    CarouselManager.cleanup();
   });
 });
