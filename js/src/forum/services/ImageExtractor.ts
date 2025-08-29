@@ -41,16 +41,26 @@ export class ImageExtractor {
     console.log('[ImageExtractor] Found', imageElements.length, 'raw image elements');
 
     imageElements.forEach((img, index) => {
-      // Skip if image is too small (likely UI elements)
-      if (img.naturalWidth && img.naturalHeight && (img.naturalWidth < 100 || img.naturalHeight < 100)) {
-        console.log(`[ImageExtractor] Skipping small image ${index + 1}: ${img.naturalWidth}x${img.naturalHeight}`);
-        return;
-      }
+      console.log(`[ImageExtractor] Processing image ${index + 1}:`, {
+        src: img.src,
+        naturalWidth: img.naturalWidth,
+        naturalHeight: img.naturalHeight,
+        className: img.className,
+        complete: img.complete
+      });
 
       // Skip if image source contains common UI indicators
       if (this.isUIImage(img.src)) {
         console.log(`[ImageExtractor] Skipping UI image ${index + 1}: ${img.src}`);
         return;
+      }
+
+      // Only skip very small images if they are actually loaded and tiny
+      if (img.complete && img.naturalWidth && img.naturalHeight) {
+        if (img.naturalWidth < 50 || img.naturalHeight < 50) {
+          console.log(`[ImageExtractor] Skipping tiny image ${index + 1}: ${img.naturalWidth}x${img.naturalHeight}`);
+          return;
+        }
       }
 
       const imageData: ImageData = {
@@ -64,7 +74,7 @@ export class ImageExtractor {
       };
 
       images.push(imageData);
-      console.log(`[ImageExtractor] Extracted raw image ${index + 1}: ${imageData.src}`);
+      console.log(`[ImageExtractor] Successfully extracted image ${index + 1}:`, imageData.src);
     });
 
     console.log(`[ImageExtractor] Raw extraction completed: ${images.length} images`);
@@ -75,14 +85,38 @@ export class ImageExtractor {
    * Check if an image is likely a UI element (avatar, icon, etc.)
    */
   private static isUIImage(src: string): boolean {
-    const uiIndicators = [
-      'avatar', 'icon', 'emoji', 'badge', 'logo', 'button',
-      'ui/', '/ui', 'assets/avatars', 'gravatar', 'favicon'
+    const srcLower = src.toLowerCase();
+    
+    // Whitelist: These paths contain content images, not UI elements
+    const contentImagePaths = [
+      '/assets/files/',      // FoF Upload images
+      '/uploads/',           // Common upload path
+      '/attachments/',       // Attachment images
+      '/storage/images/'     // Storage images
     ];
     
-    return uiIndicators.some(indicator => 
-      src.toLowerCase().includes(indicator.toLowerCase())
+    // If image is in a content path, it's definitely not a UI element
+    if (contentImagePaths.some(path => srcLower.includes(path))) {
+      console.log(`[ImageExtractor] Image whitelisted as content: ${src}`);
+      return false;
+    }
+    
+    // UI indicators that should be filtered out
+    const uiIndicators = [
+      'avatar', 'icon', 'emoji', 'badge', 'logo', 'button',
+      'ui/', '/ui', 'assets/avatars', 'gravatar', 'favicon',
+      'sprite', 'placeholder', 'loading'
+    ];
+    
+    const isUI = uiIndicators.some(indicator => 
+      srcLower.includes(indicator)
     );
+    
+    if (isUI) {
+      console.log(`[ImageExtractor] Image identified as UI element: ${src}`);
+    }
+    
+    return isUI;
   }
 
   /**
