@@ -1,5 +1,5 @@
 {
-    "name": "sycho/flarum-photoswipe",
+    "name": "wusong8899/flarum-photoswipe",
     "description": "PhotoSwipe integration",
     "keywords": [
         "flarum"
@@ -11,8 +11,6 @@
     },
     "authors": [
         {
-            "name": "Sami Mazouz",
-            "email": "sychocouldy@gmail.com",
             "role": "Developer"
         }
     ],
@@ -26,8 +24,10 @@
             "title": "PhotoSwipe",
             "category": "features",
             "optional-dependencies": [
-                "flarum/markdown", "flarum/bbcode",
-                "datitisev/flarum-post-galleries", "fof/upload"
+                "flarum/markdown",
+                "flarum/bbcode",
+                "datitisev/flarum-post-galleries",
+                "fof/upload"
             ],
             "icon": {
                 "name": "far fa-images",
