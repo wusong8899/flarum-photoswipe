@@ -121,56 +121,33 @@ app.initializers.add('sycho-photoswipe', () => {
 
     // Add helper methods to prototype
     prototype.initializeGlideComponent = function() {
-      if (!this.attrs) return;
+      if (!this.attrs?.post) return;
       
-      const dataId = this.attrs.post?.id() || this.attrs.discussion?.id();
-      if (!dataId) return;
+      const postId = this.attrs.post.id();
+      if (!postId) return;
 
-      const postElement = document.querySelector(`[data-id="${dataId}"] .Post-body`);
-      if (!postElement) return;
+      // Store reference for use in contentItems
+      this.glidePostId = postId.toString();
+      this.glideDiscussionId = this.attrs.post?.discussion?.()?.id?.()?.toString();
+    };
 
-      // Check if we should show Glide component
-      if (PhotoSwipeGlideComponent.shouldDisplay(postElement as HTMLElement)) {
-        if (!this.glideComponent) {
-          this.glideComponent = {
-            postElement: postElement as HTMLElement,
-            postId: dataId.toString(),
-            discussionId: this.attrs.discussion?.id?.()?.toString(),
+    // Extend contentItems to add Glide carousel using Flarum's ItemList pattern
+    extend(prototype, 'contentItems', function (items) {
+      // Only add Glide component for CommentPost (posts with actual content)
+      if (this.attrs?.post && this.glidePostId) {
+        const postId = this.glidePostId;
+        
+        // Always add the component - it will handle its own visibility logic
+        items.add(
+          'photoswipe-glide',
+          m(PhotoSwipeGlideComponent, {
+            postId: postId,
+            discussionId: this.glideDiscussionId,
             enableAutoplay: false // Default: no autoplay for better UX
-          };
-        }
-      } else {
-        this.glideComponent = null;
+          }),
+          -10 // Lower priority to render after main content
+        );
       }
-    };
-
-    prototype.renderGlideComponent = function() {
-      if (!this.glideComponent) {
-        return null;
-      }
-
-      return m(PhotoSwipeGlideComponent, this.glideComponent);
-    };
-
-    // Extend the view method to include Glide component
-    extend(prototype, 'view', function (vdom) {
-      if (this.glideComponent) {
-        const glideVdom = this.renderGlideComponent();
-        if (glideVdom) {
-          // Add the Glide component to the end of the existing VDOM
-          // This ensures it's rendered after the post content
-          if (Array.isArray(vdom)) {
-            vdom.push(glideVdom);
-          } else if (vdom.children && Array.isArray(vdom.children)) {
-            vdom.children.push(glideVdom);
-          } else {
-            // Fallback: create a wrapper
-            const originalVdom = vdom;
-            return [originalVdom, glideVdom];
-          }
-        }
-      }
-      return vdom;
     });
   });
 

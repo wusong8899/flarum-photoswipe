@@ -1,12 +1,12 @@
 import Component from 'flarum/common/Component';
 import type Mithril from 'mithril';
-import type { 
-  GlideInstance, 
-  ImageData, 
-  GlideState, 
-  ErrorState 
+import type {
+  GlideInstance,
+  ImageData,
+  GlideState,
+  ErrorState
 } from '../types';
-import { 
+import {
   getPostGalleryConfig,
   extractImagesFromPost,
   initializeGlide,
@@ -16,7 +16,7 @@ import {
 } from '../utils/GlideConfig';
 
 export interface PhotoSwipeGlideAttrs {
-  postElement: HTMLElement;
+  postElement?: HTMLElement;
   postId: string;
   discussionId?: string;
   enableAutoplay?: boolean;
@@ -34,7 +34,7 @@ export default class PhotoSwipeGlideComponent extends Component<PhotoSwipeGlideA
 
   oninit(vnode: Mithril.Vnode<PhotoSwipeGlideAttrs>) {
     super.oninit(vnode);
-    
+
     this.state = {
       isInitialized: false,
       isDestroying: false,
@@ -43,8 +43,7 @@ export default class PhotoSwipeGlideComponent extends Component<PhotoSwipeGlideA
       currentIndex: 0
     };
 
-    // Extract images from the post element
-    this.state.images = extractImagesFromPost(vnode.attrs.postElement);
+    // Images will be extracted in oncreate when DOM is available
   }
 
   view(_vnode: Mithril.Vnode<PhotoSwipeGlideAttrs>): Mithril.Children {
@@ -66,12 +65,12 @@ export default class PhotoSwipeGlideComponent extends Component<PhotoSwipeGlideA
         <div className="photoswipe-glide-header">
           <h4>Gallery ({this.state.images.length} images)</h4>
           <div className="glide-counter">
-            <span className="current">{this.state.currentIndex + 1}</span> / 
+            <span className="current">{this.state.currentIndex + 1}</span> /
             <span className="total">{this.state.images.length}</span>
           </div>
         </div>
-        <div 
-          className="glide photoswipe-glide" 
+        <div
+          className="glide photoswipe-glide"
           id={`photoswipe-glide-${this.state.instanceId}`}
         >
           <div className="glide__track" data-glide-el="track">
@@ -80,8 +79,8 @@ export default class PhotoSwipeGlideComponent extends Component<PhotoSwipeGlideA
             </ul>
           </div>
           <div className="glide__arrows" data-glide-el="controls">
-            <button 
-              className="glide__arrow glide__arrow--left" 
+            <button
+              className="glide__arrow glide__arrow--left"
               data-glide-dir="<"
               aria-label="Previous image"
             >
@@ -89,8 +88,8 @@ export default class PhotoSwipeGlideComponent extends Component<PhotoSwipeGlideA
                 <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
               </svg>
             </button>
-            <button 
-              className="glide__arrow glide__arrow--right" 
+            <button
+              className="glide__arrow glide__arrow--right"
               data-glide-dir=">"
               aria-label="Next image"
             >
@@ -101,7 +100,7 @@ export default class PhotoSwipeGlideComponent extends Component<PhotoSwipeGlideA
           </div>
           <div className="glide__bullets" data-glide-el="controls[nav]">
             {this.state.images.map((_, index) => (
-              <button 
+              <button
                 className={`glide__bullet ${index === this.state.currentIndex ? 'glide__bullet--active' : ''}`}
                 data-glide-dir={`=${index}`}
                 aria-label={`Go to image ${index + 1}`}
@@ -115,16 +114,30 @@ export default class PhotoSwipeGlideComponent extends Component<PhotoSwipeGlideA
 
   oncreate(vnode: Mithril.VnodeDOM<PhotoSwipeGlideAttrs>) {
     super.oncreate(vnode);
-    
-    // Initialize Glide after DOM is ready
-    requestAnimationFrame(() => {
-      this.initGlide(vnode.attrs);
-    });
+
+    // Find the post element and extract images
+    const postElement = vnode.attrs.postElement ||
+                      document.querySelector(`[data-id="${vnode.attrs.postId}"] .Post-body`);
+
+    if (postElement) {
+      this.state.images = extractImagesFromPost(postElement as HTMLElement);
+
+      // Only initialize if we have 2+ images
+      if (this.state.images.length >= 2) {
+        // Re-render with images data
+        m.redraw();
+
+        // Initialize Glide after DOM is ready
+        requestAnimationFrame(() => {
+          this.initGlide(vnode.attrs);
+        });
+      }
+    }
   }
 
   onupdate(vnode: Mithril.VnodeDOM<PhotoSwipeGlideAttrs>) {
     super.onupdate(vnode);
-    
+
     // Check if images have changed
     const newImages = extractImagesFromPost(vnode.attrs.postElement);
     if (this.shouldUpdateGlide(this.state.images, newImages)) {
@@ -145,7 +158,7 @@ export default class PhotoSwipeGlideComponent extends Component<PhotoSwipeGlideA
     this.state.isDestroying = true;
     this.destroyGlide();
   }
-  
+
   onremove(vnode: Mithril.VnodeDOM<PhotoSwipeGlideAttrs>) {
     super.onremove(vnode);
     if (!this.state.isDestroying) {
@@ -155,13 +168,13 @@ export default class PhotoSwipeGlideComponent extends Component<PhotoSwipeGlideA
 
   private renderSlide(image: ImageData, index: number): Mithril.Children {
     return (
-      <li 
+      <li
         key={`slide-${image.id}`}
         className="glide__slide photoswipe-glide-slide"
         data-slide-index={index}
       >
         <div className="slide-container">
-          <a 
+          <a
             href={image.href}
             data-pswp=""
             data-pswp-width={image.width}
@@ -169,7 +182,7 @@ export default class PhotoSwipeGlideComponent extends Component<PhotoSwipeGlideA
             title={image.title}
             className="slide-link"
           >
-            <img 
+            <img
               src={image.src}
               alt={image.alt}
               className="slide-image"
@@ -202,13 +215,13 @@ export default class PhotoSwipeGlideComponent extends Component<PhotoSwipeGlideA
 
     try {
       this.containerElement = document.querySelector(`#photoswipe-glide-${this.state.instanceId}`);
-      
+
       if (!this.containerElement) {
         throw new Error('Glide container not found');
       }
 
       const config = getPostGalleryConfig(this.state.images.length);
-      
+
       // Override autoplay if specified
       if (attrs.enableAutoplay !== undefined) {
         config.autoplay = attrs.enableAutoplay ? 8000 : false;
@@ -217,23 +230,23 @@ export default class PhotoSwipeGlideComponent extends Component<PhotoSwipeGlideA
       console.log(`🎢 PhotoSwipe Glide Configuration:`, JSON.stringify(config, null, 2));
 
       this.glideInstance = await initializeGlide(
-        this.containerElement, 
-        config, 
+        this.containerElement,
+        config,
         'PhotoSwipeGlide'
       );
 
       if (this.glideInstance) {
         // Register with carousel manager
         carouselManager.register(
-          this.state.instanceId, 
-          this.glideInstance, 
-          config, 
+          this.state.instanceId,
+          this.glideInstance,
+          config,
           attrs.postId
         );
 
         // Set up event handlers
         this.setupEventHandlers();
-        
+
         this.state.isInitialized = true;
         this.error = { hasError: false };
       }
@@ -292,9 +305,9 @@ export default class PhotoSwipeGlideComponent extends Component<PhotoSwipeGlideA
     if (!this.glideInstance || this.state.isDestroying) {
       return;
     }
-    
+
     this.state.isDestroying = true;
-    
+
     try {
       destroyGlide(this.glideInstance, `#photoswipe-glide-${this.state.instanceId}`);
       carouselManager.unregister(this.state.instanceId);
@@ -310,10 +323,10 @@ export default class PhotoSwipeGlideComponent extends Component<PhotoSwipeGlideA
   private shouldUpdateGlide(oldImages: ImageData[], newImages: ImageData[]): boolean {
     if (!oldImages || !newImages) return true;
     if (oldImages.length !== newImages.length) return true;
-    
+
     return oldImages.some((oldImage, index) => {
       const newImage = newImages[index];
-      return oldImage?.src !== newImage?.src || 
+      return oldImage?.src !== newImage?.src ||
              oldImage?.href !== newImage?.href;
     });
   }
@@ -322,7 +335,7 @@ export default class PhotoSwipeGlideComponent extends Component<PhotoSwipeGlideA
     this.destroyGlide();
     this.state.isDestroying = false;
     this.state.isInitialized = false;
-    
+
     // Wait a bit before reinitializing
     setTimeout(() => {
       this.initGlide(attrs);
@@ -340,5 +353,14 @@ export default class PhotoSwipeGlideComponent extends Component<PhotoSwipeGlideA
   static shouldDisplay(postElement: HTMLElement): boolean {
     const images = extractImagesFromPost(postElement);
     return images.length >= 2; // Only show for 2+ images
+  }
+
+  /**
+   * Static method to check if component should be displayed by post ID
+   */
+  static shouldDisplayByPostId(postId: string): boolean {
+    const postElement = document.querySelector(`[data-id="${postId}"] .Post-body`);
+    if (!postElement) return false;
+    return PhotoSwipeGlideComponent.shouldDisplay(postElement as HTMLElement);
   }
 }
