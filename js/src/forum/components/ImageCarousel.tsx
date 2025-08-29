@@ -192,7 +192,7 @@ export default class ImageCarousel extends Component<ImageCarouselAttrs> {
   }
 
   /**
-   * Render individual carousel slide with PhotoSwipe integration
+   * Render individual carousel slide
    */
   private renderCarouselSlide(image: ImageData, index: number): Mithril.Children {
     return (
@@ -202,22 +202,15 @@ export default class ImageCarousel extends Component<ImageCarouselAttrs> {
         data-slide-index={index}
       >
         <div className="slide-container">
-          <a
-            href={image.href}
-            data-pswp=""
-            data-pswp-width={image.width}
-            data-pswp-height={image.height}
-            title={image.title}
-            className="slide-link"
-            onclick={(e) => this.handleImageClick(e, image, index)}
-          >
+          <div className="slide-image-wrapper">
             <img
               src={image.src}
               alt={image.alt}
+              title={image.title}
               className="slide-image"
               loading="lazy"
             />
-          </a>
+          </div>
           {image.title && (
             <div className="slide-caption">{image.title}</div>
           )}
@@ -226,46 +219,6 @@ export default class ImageCarousel extends Component<ImageCarouselAttrs> {
     );
   }
 
-  /**
-   * Handle image click for PhotoSwipe integration
-   */
-  private handleImageClick(e: MouseEvent, image: ImageData, _index: number): void {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    console.log('[ImageCarousel] Image clicked, attempting to open PhotoSwipe for:', image.src);
-    
-    try {
-      // Try to trigger PhotoSwipe from the original post content
-      // This allows PhotoSwipe to work with all images, not just carousel ones
-      const postElement = ImageExtractor.findPostElement(this.carouselState.postId);
-      if (postElement) {
-        const photoSwipeAnchors = postElement.querySelectorAll('a[data-pswp]');
-        if (photoSwipeAnchors.length > 0) {
-          // Find the anchor that matches our image and click it
-          const matchingAnchor = Array.from(photoSwipeAnchors).find(anchor => {
-            const img = anchor.querySelector('img');
-            return img && img.src === image.src;
-          }) as HTMLAnchorElement;
-          
-          if (matchingAnchor) {
-            console.log('[ImageCarousel] Found matching PhotoSwipe anchor, triggering click');
-            matchingAnchor.click();
-            return;
-          }
-        }
-      }
-      
-      // Fallback: open image in new tab if PhotoSwipe isn't available
-      console.log('[ImageCarousel] PhotoSwipe not available, opening image in new tab');
-      window.open(image.href, '_blank');
-      
-    } catch (error) {
-      console.error('[ImageCarousel] Error handling image click:', error);
-      // Final fallback: navigate to image
-      window.location.href = image.href;
-    }
-  }
 
   /**
    * Render navigation arrows

@@ -1,8 +1,11 @@
 {
-    "name": "wusong8899/flarum-photoswipe",
-    "description": "PhotoSwipe integration",
+    "name": "wusong8899/flarum-image-carousel",
+    "description": "Display post images as carousel using Glide.js",
     "keywords": [
-        "flarum"
+        "flarum",
+        "carousel",
+        "images",
+        "glide"
     ],
     "type": "flarum-extension",
     "license": "MIT",
@@ -21,12 +24,11 @@
     },
     "extra": {
         "flarum-extension": {
-            "title": "PhotoSwipe",
+            "title": "Image Carousel",
             "category": "features",
             "optional-dependencies": [
                 "flarum/markdown",
                 "flarum/bbcode",
-                "datitisev/flarum-post-galleries",
                 "fof/upload"
             ],
             "icon": {

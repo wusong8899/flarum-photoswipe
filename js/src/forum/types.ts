@@ -146,5 +146,4 @@ export interface ImageCarouselAttrs {
   discussionId?: string;
   enableAutoplay?: boolean;
   minImageCount?: number;
-  extractionTimeout?: number;
 }
