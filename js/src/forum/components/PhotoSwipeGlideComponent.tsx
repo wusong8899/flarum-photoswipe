@@ -67,6 +67,7 @@ export default class PhotoSwipeGlideComponent extends Component<PhotoSwipeGlideA
     }
     
     console.log('[GlideComponent] Rendering carousel with', this.state.images.length, 'images');
+    console.log('[GlideComponent] Container ID will be: photoswipe-glide-' + this.state.instanceId);
 
     return (
       <div className="photoswipe-glide-wrapper">
@@ -149,24 +150,29 @@ export default class PhotoSwipeGlideComponent extends Component<PhotoSwipeGlideA
     console.log('[GlideComponent] Found post element:', !!postElement);
 
     if (postElement) {
-      this.state.images = extractImagesFromPost(postElement as HTMLElement);
-      console.log('[GlideComponent] Extracted images:', this.state.images.length);
+      const extractedImages = extractImagesFromPost(postElement as HTMLElement);
+      console.log('[GlideComponent] Extracted images:', extractedImages.length);
 
       // Only initialize if we have 2+ images
-      if (this.state.images.length >= 2) {
-        console.log('[GlideComponent] Initializing carousel for', this.state.images.length, 'images');
+      if (extractedImages.length >= 2) {
+        console.log('[GlideComponent] Initializing carousel for', extractedImages.length, 'images');
         
-        // Re-render with images data
-        m.redraw();
+        // Update state FIRST
+        this.state.images = extractedImages;
+        console.log('[GlideComponent] State updated, this.state.images.length:', this.state.images.length);
+        
+        // Force synchronous re-render to ensure DOM is updated immediately
+        m.redraw.sync();
+        console.log('[GlideComponent] Synchronous redraw completed');
 
         // Wait for DOM to be fully rendered before initializing Glide
         // Use a longer delay to ensure Mithril has completed the render cycle
         setTimeout(() => {
           console.log('[GlideComponent] Attempting to initialize Glide...');
           this.initGlideWithRetry(vnode.attrs, 0);
-        }, 100);
+        }, 200); // Increased delay
       } else {
-        console.log('[GlideComponent] Not enough images for carousel:', this.state.images.length);
+        console.log('[GlideComponent] Not enough images for carousel:', extractedImages.length);
       }
     } else {
       console.log('[GlideComponent] Post element not found for postId:', vnode.attrs.postId);
