@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@glidejs/glide':
+        specifier: ^3.6.2
+        version: 3.7.1
       photoswipe:
         specifier: ^5.3.2
         version: 5.4.4
@@ -204,6 +207,9 @@ packages:
 
   '@flarum/prettier-config@1.0.0':
     resolution: {integrity: sha512-3/AcliIi5jPt4i7COb5hsLv6hm4EeXT9yI9I2EuEvhPi2QR+O9Y/8wrqRuO5mDkRzCIhUY+mjIL/f9770Zwfqg==}
+
+  '@glidejs/glide@3.7.1':
+    resolution: {integrity: sha512-8he0pZpLSqTesSFYiuWdhBmtdlYSPWxfPUCKtkkiX6ZmT8UdMdmoFPtJaOwLBXv4p2JiGxqbuPdiRGGo2e/htQ==}
 
   '@isaacs/balanced-match@4.0.1':
     resolution: {integrity: sha512-yzMTt9lEb8Gv7zRioUilSglI0c0smZ9k5D65677DLWLtWJaXIS3CqcGyUFByYKlnUj6TkjLVs54fBl6+TiGQDQ==}
@@ -821,6 +827,8 @@ snapshots:
     optional: true
 
   '@flarum/prettier-config@1.0.0': {}
+
+  '@glidejs/glide@3.7.1': {}
 
   '@isaacs/balanced-match@4.0.1': {}
 

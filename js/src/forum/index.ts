@@ -2,9 +2,11 @@ import app from 'flarum/forum/app';
 import { extend } from 'flarum/common/extend';
 import CommentPost from 'flarum/forum/components/CommentPost';
 import DiscussionListItem from 'flarum/forum/components/DiscussionListItem';
-// @ts-ignore
 import PhotoSwipeLightbox from 'photoswipe/lightbox';
 import pswpModule from 'photoswipe';
+import PhotoSwipeGlideComponent from './components/PhotoSwipeGlideComponent';
+import { carouselManager } from './utils/GlideConfig';
+import m from 'mithril';
 
 app.initializers.add('sycho-photoswipe', () => {
   let components: any[] = [CommentPost.prototype];
@@ -55,9 +57,15 @@ app.initializers.add('sycho-photoswipe', () => {
         children: 'a[data-pswp]',
         pswpModule,
       });
+
+      // Initialize Glide component for posts with multiple images
+      this.glideComponent = null;
     });
 
     extend(prototype, ['onupdate', 'oncreate'], function () {
+      // Initialize/update Glide component for posts with multiple images
+      this.initializeGlideComponent();
+
       // @ts-ignore
       this.$('a[data-pswp] > img').each((index, el: HTMLImageElement) => {
         const $el = $(el);
@@ -102,8 +110,71 @@ app.initializers.add('sycho-photoswipe', () => {
     });
 
     extend(prototype, 'onremove', function () {
+      // Clean up Glide component
+      if (this.glideComponent) {
+        this.glideComponent = null;
+      }
+
       this.lightbox.destroy();
       this.lightbox = null;
     });
+
+    // Add helper methods to prototype
+    prototype.initializeGlideComponent = function() {
+      if (!this.attrs) return;
+      
+      const dataId = this.attrs.post?.id() || this.attrs.discussion?.id();
+      if (!dataId) return;
+
+      const postElement = document.querySelector(`[data-id="${dataId}"] .Post-body`);
+      if (!postElement) return;
+
+      // Check if we should show Glide component
+      if (PhotoSwipeGlideComponent.shouldDisplay(postElement as HTMLElement)) {
+        if (!this.glideComponent) {
+          this.glideComponent = {
+            postElement: postElement as HTMLElement,
+            postId: dataId.toString(),
+            discussionId: this.attrs.discussion?.id?.()?.toString(),
+            enableAutoplay: false // Default: no autoplay for better UX
+          };
+        }
+      } else {
+        this.glideComponent = null;
+      }
+    };
+
+    prototype.renderGlideComponent = function() {
+      if (!this.glideComponent) {
+        return null;
+      }
+
+      return m(PhotoSwipeGlideComponent, this.glideComponent);
+    };
+
+    // Extend the view method to include Glide component
+    extend(prototype, 'view', function (vdom) {
+      if (this.glideComponent) {
+        // Insert the Glide component after the post body
+        const postBody = vdom.find('.Post-body');
+        if (postBody) {
+          const glideVdom = this.renderGlideComponent();
+          if (glideVdom) {
+            // Insert after Post-body
+            const parentContainer = postBody.parent || vdom;
+            const bodyIndex = parentContainer.children.indexOf(postBody);
+            if (bodyIndex !== -1) {
+              parentContainer.children.splice(bodyIndex + 1, 0, glideVdom);
+            }
+          }
+        }
+      }
+    });
+  });
+
+  // Global cleanup handler for navigation
+  extend(app, 'mount', function () {
+    // Clean up all carousel instances on navigation
+    carouselManager.cleanupAll();
   });
 });
