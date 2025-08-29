@@ -31,7 +31,6 @@ export default class ImageCarousel extends Component<ImageCarouselAttrs> {
   private errorState: ErrorState = { hasError: false };
   private carouselEngine: GlideInstance | null = null;
   private containerElement: HTMLElement | null = null;
-  private extractionPromise: Promise<ImageData[]> | null = null;
 
   oninit(vnode: Mithril.Vnode<ImageCarouselAttrs>) {
     super.oninit(vnode);
@@ -57,16 +56,16 @@ export default class ImageCarousel extends Component<ImageCarouselAttrs> {
   }
 
   /**
-   * Initiate the image extraction process with proper timing coordination
+   * Initiate the image extraction process using Glide-first approach
    */
-  private async initiateImageExtraction(attrs: ImageCarouselAttrs): Promise<void> {
-    if (this.carouselState.isExtracting || this.extractionPromise) {
+  private initiateImageExtraction(attrs: ImageCarouselAttrs): void {
+    if (this.carouselState.isExtracting) {
       console.log('[ImageCarousel] Extraction already in progress, skipping');
       return;
     }
 
     this.carouselState.isExtracting = true;
-    console.log('[ImageCarousel] Starting image extraction for post:', attrs.postId);
+    console.log('[ImageCarousel] Starting Glide-first image extraction for post:', attrs.postId);
 
     try {
       // Find post element using multiple strategies
@@ -76,27 +75,19 @@ export default class ImageCarousel extends Component<ImageCarouselAttrs> {
         throw new Error(`Post element not found for post ID: ${attrs.postId}`);
       }
 
-      // Extract images with PhotoSwipe processing awareness
-      this.extractionPromise = ImageExtractor.extractImagesFromPost(postElement, {
-        requirePhotoSwipeProcessing: true,
-        minImageCount: attrs.minImageCount || 2,
-        maxRetries: 15, // Allow more retries for proper coordination
-        retryDelay: 150
-      });
-
-      const extractedImages = await this.extractionPromise;
+      // Extract raw images immediately (Glide-first approach)
+      const extractedImages = ImageExtractor.extractRawImagesFromPost(postElement);
       
-      console.log('[ImageCarousel] Image extraction completed:', extractedImages.length, 'images found');
+      console.log('[ImageCarousel] Glide-first extraction completed:', extractedImages.length, 'images found');
       
       // Update component state with extracted images
       this.updateComponentState(extractedImages);
       
     } catch (error) {
-      console.error('[ImageCarousel] Image extraction failed:', error);
+      console.error('[ImageCarousel] Glide-first extraction failed:', error);
       this.handleExtractionError(error);
     } finally {
       this.carouselState.isExtracting = false;
-      this.extractionPromise = null;
     }
   }
 
@@ -201,7 +192,7 @@ export default class ImageCarousel extends Component<ImageCarouselAttrs> {
   }
 
   /**
-   * Render individual carousel slide
+   * Render individual carousel slide with PhotoSwipe integration
    */
   private renderCarouselSlide(image: ImageData, index: number): Mithril.Children {
     return (
@@ -218,6 +209,7 @@ export default class ImageCarousel extends Component<ImageCarouselAttrs> {
             data-pswp-height={image.height}
             title={image.title}
             className="slide-link"
+            onclick={(e) => this.handleImageClick(e, image, index)}
           >
             <img
               src={image.src}
@@ -232,6 +224,47 @@ export default class ImageCarousel extends Component<ImageCarouselAttrs> {
         </div>
       </li>
     );
+  }
+
+  /**
+   * Handle image click for PhotoSwipe integration
+   */
+  private handleImageClick(e: MouseEvent, image: ImageData, _index: number): void {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    console.log('[ImageCarousel] Image clicked, attempting to open PhotoSwipe for:', image.src);
+    
+    try {
+      // Try to trigger PhotoSwipe from the original post content
+      // This allows PhotoSwipe to work with all images, not just carousel ones
+      const postElement = ImageExtractor.findPostElement(this.carouselState.postId);
+      if (postElement) {
+        const photoSwipeAnchors = postElement.querySelectorAll('a[data-pswp]');
+        if (photoSwipeAnchors.length > 0) {
+          // Find the anchor that matches our image and click it
+          const matchingAnchor = Array.from(photoSwipeAnchors).find(anchor => {
+            const img = anchor.querySelector('img');
+            return img && img.src === image.src;
+          }) as HTMLAnchorElement;
+          
+          if (matchingAnchor) {
+            console.log('[ImageCarousel] Found matching PhotoSwipe anchor, triggering click');
+            matchingAnchor.click();
+            return;
+          }
+        }
+      }
+      
+      // Fallback: open image in new tab if PhotoSwipe isn't available
+      console.log('[ImageCarousel] PhotoSwipe not available, opening image in new tab');
+      window.open(image.href, '_blank');
+      
+    } catch (error) {
+      console.error('[ImageCarousel] Error handling image click:', error);
+      // Final fallback: navigate to image
+      window.location.href = image.href;
+    }
   }
 
   /**

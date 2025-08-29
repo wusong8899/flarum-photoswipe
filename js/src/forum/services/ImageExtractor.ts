@@ -23,6 +23,69 @@ export class ImageExtractor {
   };
 
   /**
+   * Extract raw images from a post element immediately (Glide-first approach)
+   * Does not wait for PhotoSwipe processing - extracts original img tags
+   */
+  public static extractRawImagesFromPost(postElement: HTMLElement | null): ImageData[] {
+    const images: ImageData[] = [];
+    
+    if (!postElement) {
+      console.log('[ImageExtractor] No post element provided for raw extraction');
+      return [];
+    }
+
+    console.log('[ImageExtractor] Starting raw image extraction (Glide-first)');
+
+    // Find all img elements directly, regardless of PhotoSwipe processing
+    const imageElements = postElement.querySelectorAll('img');
+    console.log('[ImageExtractor] Found', imageElements.length, 'raw image elements');
+
+    imageElements.forEach((img, index) => {
+      // Skip if image is too small (likely UI elements)
+      if (img.naturalWidth && img.naturalHeight && (img.naturalWidth < 100 || img.naturalHeight < 100)) {
+        console.log(`[ImageExtractor] Skipping small image ${index + 1}: ${img.naturalWidth}x${img.naturalHeight}`);
+        return;
+      }
+
+      // Skip if image source contains common UI indicators
+      if (this.isUIImage(img.src)) {
+        console.log(`[ImageExtractor] Skipping UI image ${index + 1}: ${img.src}`);
+        return;
+      }
+
+      const imageData: ImageData = {
+        id: `raw-img-${index}-${Date.now()}`,
+        src: img.src,
+        href: img.src, // Use src as href for raw images
+        alt: img.alt || `Image ${index + 1}`,
+        title: img.title || img.alt || `Image ${index + 1}`,
+        width: img.naturalWidth || parseInt(img.getAttribute('width') || '800', 10),
+        height: img.naturalHeight || parseInt(img.getAttribute('height') || '600', 10)
+      };
+
+      images.push(imageData);
+      console.log(`[ImageExtractor] Extracted raw image ${index + 1}: ${imageData.src}`);
+    });
+
+    console.log(`[ImageExtractor] Raw extraction completed: ${images.length} images`);
+    return images;
+  }
+
+  /**
+   * Check if an image is likely a UI element (avatar, icon, etc.)
+   */
+  private static isUIImage(src: string): boolean {
+    const uiIndicators = [
+      'avatar', 'icon', 'emoji', 'badge', 'logo', 'button',
+      'ui/', '/ui', 'assets/avatars', 'gravatar', 'favicon'
+    ];
+    
+    return uiIndicators.some(indicator => 
+      src.toLowerCase().includes(indicator.toLowerCase())
+    );
+  }
+
+  /**
    * Extract images from a post element with timing awareness
    * Waits for PhotoSwipe to process images if required
    */

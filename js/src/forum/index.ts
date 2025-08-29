@@ -173,7 +173,7 @@ app.initializers.add('sycho-photoswipe', () => {
             minImageCount: 2,
             extractionTimeout: 15000
           }),
-          -10 // Lower priority to render after main content
+          100 // High priority to render before main content (at the top)
         );
       } else {
         console.log('[Glide] Not adding component - post attrs or glidePostId missing');
