@@ -327,7 +327,7 @@ export default class PhotoSwipeGlideComponent extends Component<PhotoSwipeGlideA
     return oldImages.some((oldImage, index) => {
       const newImage = newImages[index];
       return oldImage?.src !== newImage?.src ||
-             oldImage?.href !== newImage?.href;
+            oldImage?.href !== newImage?.href;
     });
   }
 

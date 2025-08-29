@@ -9,17 +9,22 @@ import { carouselManager } from './utils/GlideConfig';
 import m from 'mithril';
 
 app.initializers.add('sycho-photoswipe', () => {
+  console.log('[PhotoSwipe] Extension initializing...');
+  
   let components: any[] = [CommentPost.prototype];
 
   if ('ianm-synopsis' in flarum.extensions) {
     components.push(DiscussionListItem.prototype);
+    console.log('[PhotoSwipe] Found ianm-synopsis extension');
   }
 
   const hasGalleryExtension = 'datitisev-post-galleries' in flarum.extensions;
+  console.log('[PhotoSwipe] Gallery extension detected:', hasGalleryExtension);
 
   components.forEach((prototype) => {
     extend(prototype, 'oninit', function (this: any) {
       const dataId = this.attrs.post?.id() || this.attrs.discussion?.id();
+      console.log('[PhotoSwipe] Component oninit, dataId:', dataId);
       const selectors = [];
 
       // The browser might not support :has yet.
@@ -52,8 +57,11 @@ app.initializers.add('sycho-photoswipe', () => {
         );
       }
 
+      const gallerySelector = selectors.join(', ');
+      console.log('[PhotoSwipe] Creating lightbox with gallery selector:', gallerySelector);
+      
       this.lightbox = new PhotoSwipeLightbox({
-        gallery: selectors.join(', '),
+        gallery: gallerySelector,
         children: 'a[data-pswp]',
         pswpModule,
       });
@@ -63,11 +71,16 @@ app.initializers.add('sycho-photoswipe', () => {
     });
 
     extend(prototype, ['onupdate', 'oncreate'], function () {
+      console.log('[PhotoSwipe] oncreate/onupdate triggered');
+      
       // Initialize/update Glide component for posts with multiple images
       this.initializeGlideComponent();
 
       // @ts-ignore
-      this.$('a[data-pswp] > img').each((index, el: HTMLImageElement) => {
+      const $images = this.$('a[data-pswp] > img');
+      console.log('[PhotoSwipe] Found images:', $images.length);
+      
+      $images.each((index, el: HTMLImageElement) => {
         const $el = $(el);
         const $a = $el.parent('a');
         const setDimensions = () => {
@@ -77,10 +90,12 @@ app.initializers.add('sycho-photoswipe', () => {
 
         if (el.complete && el.naturalWidth) {
           setDimensions();
+          console.log('[PhotoSwipe] Image loaded, initializing lightbox for image:', index);
           this.lightbox.init();
         } else {
           el.onload = () => {
             setDimensions();
+            console.log('[PhotoSwipe] Image onload, initializing lightbox for image:', index);
             this.lightbox.init();
 
             if (this.lightbox.pswp) this.lightbox.pswp.refreshSlideContent(index);
