@@ -159,10 +159,12 @@ export default class PhotoSwipeGlideComponent extends Component<PhotoSwipeGlideA
         // Re-render with images data
         m.redraw();
 
-        // Initialize Glide after DOM is ready
-        requestAnimationFrame(() => {
-          this.initGlide(vnode.attrs);
-        });
+        // Wait for DOM to be fully rendered before initializing Glide
+        // Use a longer delay to ensure Mithril has completed the render cycle
+        setTimeout(() => {
+          console.log('[GlideComponent] Attempting to initialize Glide...');
+          this.initGlideWithRetry(vnode.attrs, 0);
+        }, 100);
       } else {
         console.log('[GlideComponent] Not enough images for carousel:', this.state.images.length);
       }
@@ -173,17 +175,34 @@ export default class PhotoSwipeGlideComponent extends Component<PhotoSwipeGlideA
 
   onupdate(vnode: Mithril.VnodeDOM<PhotoSwipeGlideAttrs>) {
     super.onupdate(vnode);
+    
+    console.log('[GlideComponent] onupdate called, isInitialized:', this.state.isInitialized, 'images:', this.state.images.length);
 
-    // Check if images have changed
-    const newImages = extractImagesFromPost(vnode.attrs.postElement);
-    if (this.shouldUpdateGlide(this.state.images, newImages)) {
-      this.state.images = newImages;
-      if (this.glideInstance && this.state.isInitialized) {
-        try {
-          this.glideInstance.update();
-        } catch (error) {
-          console.error('Error updating Glide:', error);
-          this.reinitializeGlide(vnode.attrs);
+    // If we have images but haven't initialized yet, try to initialize
+    if (this.state.images.length >= 2 && !this.state.isInitialized && !this.state.isDestroying) {
+      const containerElement = document.querySelector(`#photoswipe-glide-${this.state.instanceId}`);
+      if (containerElement) {
+        console.log('[GlideComponent] Container found in onupdate, initializing Glide');
+        this.initGlide(vnode.attrs);
+        return;
+      }
+    }
+
+    // Check if images have changed for existing initialized carousels
+    const postElement = vnode.attrs.postElement ||
+                       document.querySelector(`[data-id="${vnode.attrs.postId}"] .Post-body`) as HTMLElement;
+    
+    if (postElement) {
+      const newImages = extractImagesFromPost(postElement);
+      if (this.shouldUpdateGlide(this.state.images, newImages)) {
+        this.state.images = newImages;
+        if (this.glideInstance && this.state.isInitialized) {
+          try {
+            this.glideInstance.update();
+          } catch (error) {
+            console.error('Error updating Glide:', error);
+            this.reinitializeGlide(vnode.attrs);
+          }
         }
       }
     }
@@ -242,6 +261,33 @@ export default class PhotoSwipeGlideComponent extends Component<PhotoSwipeGlideA
         </button>
       </div>
     );
+  }
+
+  private async initGlideWithRetry(attrs: PhotoSwipeGlideAttrs, retryCount: number): Promise<void> {
+    const maxRetries = 5;
+    const retryDelay = 200; // 200ms between retries
+    
+    console.log('[GlideComponent] initGlideWithRetry, attempt:', retryCount + 1);
+    
+    // Check if container exists before attempting initialization
+    const containerElement = document.querySelector(`#photoswipe-glide-${this.state.instanceId}`);
+    
+    if (!containerElement && retryCount < maxRetries) {
+      console.log('[GlideComponent] Container not found, retrying in', retryDelay, 'ms...');
+      setTimeout(() => {
+        this.initGlideWithRetry(attrs, retryCount + 1);
+      }, retryDelay);
+      return;
+    }
+    
+    if (!containerElement) {
+      console.error('[GlideComponent] Container not found after', maxRetries, 'retries. Available containers:', 
+        Array.from(document.querySelectorAll('[id^="photoswipe-glide-"]')).map(el => el.id));
+      return;
+    }
+    
+    console.log('[GlideComponent] Container found, proceeding with Glide initialization');
+    await this.initGlide(attrs);
   }
 
   private async initGlide(attrs: PhotoSwipeGlideAttrs): Promise<void> {
