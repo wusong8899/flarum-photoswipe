@@ -37,8 +37,18 @@ export class ImageExtractor {
     console.log('[ImageExtractor] Starting raw image extraction (Glide-first)');
 
     // Find all img elements directly, regardless of PhotoSwipe processing
-    const imageElements = postElement.querySelectorAll('img');
+    let imageElements = postElement.querySelectorAll('img');
     console.log('[ImageExtractor] Found', imageElements.length, 'raw image elements');
+
+    // Defensive check: If no images found and element is not .Post-body, try to find .Post-body within it
+    if (imageElements.length === 0 && !postElement.classList.contains('Post-body')) {
+      console.log('[ImageExtractor] No images found, searching for .Post-body within element');
+      const postBody = postElement.querySelector('.Post-body') as HTMLElement;
+      if (postBody) {
+        imageElements = postBody.querySelectorAll('img');
+        console.log('[ImageExtractor] Found', imageElements.length, 'raw image elements in .Post-body');
+      }
+    }
 
     imageElements.forEach((img, index) => {
       console.log(`[ImageExtractor] Processing image ${index + 1}:`, {
@@ -225,10 +235,10 @@ export class ImageExtractor {
     console.log(`[ImageExtractor] Searching for post element with ID: ${postId}`);
 
     const selectors = [
-      `[data-id="${postId}"] .Post-body`,
-      `[data-id="${postId}"]`,
       `.PostStream-item[data-id="${postId}"] .Post-body`,
+      `[data-id="${postId}"] .Post-body`,
       `.PostStream-item[data-id="${postId}"]`,
+      `[data-id="${postId}"]`,
       `#post-${postId} .Post-body`,
       `#post-${postId}`
     ];
