@@ -45,7 +45,46 @@ export default class PhotoSwipeGlideComponent extends Component<PhotoSwipeGlideA
       currentIndex: 0
     };
 
-    // Images will be extracted in oncreate when DOM is available
+    // Extract images immediately in oninit - this is the key fix!
+    this.extractAndSetImages(vnode.attrs);
+  }
+
+  private extractAndSetImages(attrs: PhotoSwipeGlideAttrs): void {
+    console.log('[GlideComponent] Extracting images in oninit for post:', attrs.postId);
+    
+    // Find the post element using multiple strategies
+    let postElement = attrs.postElement;
+    
+    if (!postElement) {
+      const selectors = [
+        `[data-id="${attrs.postId}"] .Post-body`,
+        `[data-id="${attrs.postId}"]`,
+        `.PostStream-item[data-id="${attrs.postId}"] .Post-body`,
+        `.PostStream-item[data-id="${attrs.postId}"]`
+      ];
+      
+      for (const selector of selectors) {
+        postElement = document.querySelector(selector) as HTMLElement;
+        if (postElement) {
+          console.log('[GlideComponent] Found post element in oninit with selector:', selector);
+          break;
+        }
+      }
+    }
+
+    if (postElement) {
+      const extractedImages = extractImagesFromPost(postElement);
+      console.log('[GlideComponent] Images extracted in oninit:', extractedImages.length);
+      
+      if (extractedImages.length >= 2) {
+        this.state.images = extractedImages;
+        console.log('[GlideComponent] State set with', this.state.images.length, 'images in oninit');
+      } else {
+        console.log('[GlideComponent] Not enough images for carousel in oninit:', extractedImages.length);
+      }
+    } else {
+      console.log('[GlideComponent] Post element not found in oninit for postId:', attrs.postId);
+    }
   }
 
   view(_vnode: Mithril.Vnode<PhotoSwipeGlideAttrs>): Mithril.Children {
@@ -125,57 +164,31 @@ export default class PhotoSwipeGlideComponent extends Component<PhotoSwipeGlideA
     super.oncreate(vnode);
     
     console.log('[GlideComponent] oncreate called for post:', vnode.attrs.postId);
+    console.log('[GlideComponent] Images available in oncreate:', this.state.images.length);
 
-    // Find the post element and extract images using multiple strategies
-    let postElement = vnode.attrs.postElement;
-    
-    if (!postElement) {
-      // Try different selectors to find the post element
-      const selectors = [
-        `[data-id="${vnode.attrs.postId}"] .Post-body`,
-        `[data-id="${vnode.attrs.postId}"]`,
-        `.PostStream-item[data-id="${vnode.attrs.postId}"] .Post-body`,
-        `.PostStream-item[data-id="${vnode.attrs.postId}"]`
-      ];
+    // If images were successfully extracted in oninit, initialize Glide
+    if (this.state.images.length >= 2) {
+      console.log('[GlideComponent] Initializing Glide with', this.state.images.length, 'images');
       
-      for (const selector of selectors) {
-        postElement = document.querySelector(selector) as HTMLElement;
-        if (postElement) {
-          console.log('[GlideComponent] Found post element with selector:', selector);
-          break;
-        }
-      }
-    }
-    
-    console.log('[GlideComponent] Found post element:', !!postElement);
-
-    if (postElement) {
-      const extractedImages = extractImagesFromPost(postElement as HTMLElement);
-      console.log('[GlideComponent] Extracted images:', extractedImages.length);
-
-      // Only initialize if we have 2+ images
-      if (extractedImages.length >= 2) {
-        console.log('[GlideComponent] Initializing carousel for', extractedImages.length, 'images');
-        
-        // Update state FIRST
-        this.state.images = extractedImages;
-        console.log('[GlideComponent] State updated, this.state.images.length:', this.state.images.length);
-        
-        // Force synchronous re-render to ensure DOM is updated immediately
-        m.redraw.sync();
-        console.log('[GlideComponent] Synchronous redraw completed');
-
-        // Wait for DOM to be fully rendered before initializing Glide
-        // Use a longer delay to ensure Mithril has completed the render cycle
-        setTimeout(() => {
-          console.log('[GlideComponent] Attempting to initialize Glide...');
-          this.initGlideWithRetry(vnode.attrs, 0);
-        }, 200); // Increased delay
-      } else {
-        console.log('[GlideComponent] Not enough images for carousel:', extractedImages.length);
-      }
+      // Initialize Glide after a short delay to ensure DOM is ready
+      setTimeout(() => {
+        console.log('[GlideComponent] Attempting to initialize Glide...');
+        this.initGlideWithRetry(vnode.attrs, 0);
+      }, 100);
     } else {
-      console.log('[GlideComponent] Post element not found for postId:', vnode.attrs.postId);
+      console.log('[GlideComponent] No images available for carousel initialization');
+      
+      // Fallback: try to extract images again if they weren't found in oninit
+      console.log('[GlideComponent] Attempting fallback image extraction...');
+      this.extractAndSetImages(vnode.attrs);
+      
+      // If we found images in the fallback, try to initialize
+      if (this.state.images.length >= 2) {
+        console.log('[GlideComponent] Fallback extraction successful, attempting Glide initialization');
+        setTimeout(() => {
+          this.initGlideWithRetry(vnode.attrs, 0);
+        }, 100);
+      }
     }
   }
 
